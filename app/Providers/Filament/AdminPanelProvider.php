@@ -30,9 +30,11 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => '#ff6b6b',
+                'primary' => Color::hex('#ff6b6b'), // یا Color::Red
                 'danger' => Color::Rose,
                 'success' => Color::Emerald,
+                'warning' => Color::Amber,
+                'info' => Color::Blue,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -42,18 +44,18 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-
                 \App\Filament\Widgets\RecentMessagesWidget::class,
                 \App\Filament\Widgets\PanelUsers::class,
-
             ])
             ->plugins([
-//                FilamentGoogleAnalyticsPlugin::make(),
+                // اگر نیاز دارید، uncomment کنید
+                // FilamentGoogleAnalyticsPlugin::make(),
+
                 FilamentFullCalendarPlugin::make()
-                    ->selectable() // فعال سازی انتخاب
-                    ->editable()  , // فعال سازی درگ و دراپ
-
-
+                    ->selectable()
+                    ->editable()
+                    ->timezone(config('app.timezone'))
+                    ->locale(config('app.locale')),
             ])
             ->middleware([
                 EncryptCookies::class,

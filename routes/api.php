@@ -8,8 +8,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ServicesController;
 use App\Http\Controllers\Api\TelegramController;
 use App\Http\Controllers\Api\WaitingListController;
-use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\ClientApiController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
