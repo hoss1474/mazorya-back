@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ServicesController;
 use App\Http\Controllers\Api\TelegramController;
 use App\Http\Controllers\Api\WaitingListController;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,14 +20,16 @@ use Illuminate\Support\Facades\Route;
 
 
 // ================= AUTH =================
-Route::post('/register', [AuthController::class, 'register']);
-//Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
-//Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/login-otp', [AuthController::class, 'loginWithOtp']);
-Route::post('/verify-login-otp', [AuthController::class, 'verifyLoginOtp']);
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
 
-
+    Route::middleware('auth:api')->group(function () {
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/refresh', [AuthController::class, 'refresh']);
+    });
+});
 // روت‌های عمومی برای نمایش اطلاعات (بدون نیاز به لاگین)
 Route::get('/projects', [ProjectController::class, 'index']);
 // برای API

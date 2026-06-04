@@ -4,12 +4,11 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // اگر از Sanctum استفاده می‌کنید
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class Client extends Authenticatable implements JWTSubject
 {
-    use Notifiable, HasApiTokens; // HasApiTokens برای Sanctum
+    use Notifiable;
 
     protected $table = 'clients';
 
@@ -20,8 +19,9 @@ class Client extends Authenticatable implements JWTSubject
         'phone',
         'password',
         'profile_image',
-        'phone_verified_at',
         'is_active',
+        'phone_verified_at',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -31,12 +31,10 @@ class Client extends Authenticatable implements JWTSubject
 
     protected $casts = [
         'phone_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
         'is_active' => 'boolean',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
-    // JWT Methods
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -47,18 +45,13 @@ class Client extends Authenticatable implements JWTSubject
         return [];
     }
 
-    // Accessor
     public function getFullNameAttribute()
     {
-        return $this->first_name . ' ' . $this->last_name;
+        return "{$this->first_name} {$this->last_name}";
     }
 
-    // Scope برای کاربران فعال
     public function scopeActive($query)
     {
-        return $query->where('is_active', true)
-            ->whereNotNull('phone_verified_at');
+        return $query->where('is_active', true);
     }
-
-
 }
