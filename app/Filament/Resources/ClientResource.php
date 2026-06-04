@@ -24,7 +24,7 @@ class ClientResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationLabel = 'کاربران';
-    protected static ?string $pluralLabel = 'کاربراhان';
+    protected static ?string $pluralLabel = 'کاربران اااا';
     protected static ?string $navigationGroup = 'مدیریت کاربران';
 
     protected static ?string $slug = 'clients';
