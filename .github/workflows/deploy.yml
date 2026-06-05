@@ -42,7 +42,7 @@ jobs:
             echo "✅ Connected to server!"
             
             # رفتن به مسیر پروژه
-            cd /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-bac
+            cd /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
             
             # کشیدن آخرین تغییرات از گیت
             git pull origin main
@@ -73,8 +73,8 @@ jobs:
             php artisan view:cache
             
             # تنظیم دسترسی‌ها
-            chown -R u573287159:apache /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-bac
-            chmod -R 755 /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-bac
+            chown -R u573287159:apache /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
+            chmod -R 755 /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
             chmod -R 775 storage
             chmod -R 775 bootstrap/cache
             
