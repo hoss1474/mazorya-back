@@ -41,44 +41,31 @@ jobs:
           script: |
             echo "✅ Connected to server!"
             
-            # رفتن به مسیر پروژه
+            # رفتن به مسیر پروژه - مسیر درست شده
             cd /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
             
-            # کشیدن آخرین تغییرات از گیت
+            # کشیدن آخرین تغییرات
             git pull origin main
             
-            # نصب دیپندنسی‌های PHP (اگه composer.json تغییر کرده)
+            # نصب دیپندنسی‌های PHP
             composer install --no-dev --optimize-autoloader --no-interaction
-            
-            # نصب دیپندنسی‌های Node.js و build کردن (اگه لازمه)
-            # npm install && npm run build
             
             # کپی فایل env (اگه وجود نداره)
             if [ ! -f ".env" ]; then
               cp .env.example .env
+              php artisan key:generate
             fi
             
             # اجرای مایگریشن‌ها
             php artisan migrate --force
             
-            # پاک کردن کش
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan view:clear
-            php artisan route:clear
-            
-            # بازسازی کش (برای تولید)
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+            # پاک کردن و بازسازی کش
+            php artisan optimize:clear
+            php artisan optimize
             
             # تنظیم دسترسی‌ها
             chown -R u573287159:apache /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
             chmod -R 755 /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
-            chmod -R 775 storage
-            chmod -R 775 bootstrap/cache
-            
-            # ریستارت PHP-FPM (اگه لازمه)
-            # systemctl reload php8.2-fpm 2>/dev/null || true
+            chmod -R 775 storage bootstrap/cache
             
             echo "✅ Laravel deployment complete!"
