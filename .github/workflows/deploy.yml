@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: Deploy Laravel to Server
 
 on:
   push:
@@ -8,10 +8,30 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📂 Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: 🎯 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, pdo_mysql, zip, gd
+
+      - name: 📦 Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: 🛠️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install NPM dependencies
+        run: npm install
+
+      - name: 🏗️ Build assets (Vite)
+        run: npm run build
+
+      - name: 🚀 Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -20,6 +40,45 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             echo "✅ Connected to server!"
-            whoami
-            pwd
-            ls -la
+            
+            # رفتن به مسیر پروژه
+            cd /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-bac
+            
+            # کشیدن آخرین تغییرات از گیت
+            git pull origin main
+            
+            # نصب دیپندنسی‌های PHP (اگه composer.json تغییر کرده)
+            composer install --no-dev --optimize-autoloader --no-interaction
+            
+            # نصب دیپندنسی‌های Node.js و build کردن (اگه لازمه)
+            # npm install && npm run build
+            
+            # کپی فایل env (اگه وجود نداره)
+            if [ ! -f ".env" ]; then
+              cp .env.example .env
+            fi
+            
+            # اجرای مایگریشن‌ها
+            php artisan migrate --force
+            
+            # پاک کردن کش
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan view:clear
+            php artisan route:clear
+            
+            # بازسازی کش (برای تولید)
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            
+            # تنظیم دسترسی‌ها
+            chown -R u573287159:apache /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-bac
+            chmod -R 755 /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-bac
+            chmod -R 775 storage
+            chmod -R 775 bootstrap/cache
+            
+            # ریستارت PHP-FPM (اگه لازمه)
+            # systemctl reload php8.2-fpm 2>/dev/null || true
+            
+            echo "✅ Laravel deployment complete!"
