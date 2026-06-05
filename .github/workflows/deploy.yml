@@ -1,4 +1,4 @@
-name: Deploy Laravel to Server
+name: Deploy to Server (FTP)
 
 on:
   push:
@@ -20,52 +20,38 @@ jobs:
       - name: 📦 Install Composer dependencies
         run: composer install --no-dev --optimize-autoloader
 
-      - name: 🛠️ Setup Node.js
-        uses: actions/setup-node@v4
+      - name: 📤 FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          node-version: '20'
+          server: 82.29.191.204
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          local-dir: ./
+          server-dir: /domains/cardifygroup.com/public_html/api/mazorya-back/
+          exclude: |
+            .git
+            .github
+            node_modules
+            .env
+            storage.zip
+            .gitignore
+            .editorconfig
+            tests/
+            storage/logs/*.log
 
-      - name: 📦 Install NPM dependencies
-        run: npm install
-
-      - name: 🏗️ Build assets (Vite)
-        run: npm run build
-
-      - name: 🚀 Deploy via SSH
+      - name: 🔧 Run Laravel commands (via SSH)
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          port: ${{ secrets.VPS_PORT }}
+          host: 82.29.191.204
+          username: u573287159
+          port: 65002
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            echo "✅ Connected to server!"
-            
-            # رفتن به مسیر پروژه - مسیر درست شده
             cd /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
-            
-            # کشیدن آخرین تغییرات
-            git pull origin main
-            
-            # نصب دیپندنسی‌های PHP
             composer install --no-dev --optimize-autoloader --no-interaction
-            
-            # کپی فایل env (اگه وجود نداره)
-            if [ ! -f ".env" ]; then
-              cp .env.example .env
-              php artisan key:generate
-            fi
-            
-            # اجرای مایگریشن‌ها
             php artisan migrate --force
-            
-            # پاک کردن و بازسازی کش
             php artisan optimize:clear
             php artisan optimize
-            
-            # تنظیم دسترسی‌ها
-            chown -R u573287159:apache /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
-            chmod -R 755 /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
             chmod -R 775 storage bootstrap/cache
-            
             echo "✅ Laravel deployment complete!"
