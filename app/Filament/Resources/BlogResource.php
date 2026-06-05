@@ -21,7 +21,7 @@ class BlogResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'مقالات';
     protected static ?string $modelLabel = 'مقاله';
-    protected static ?string $pluralModelLabel = 'مقالات';
+    protected static ?string $pluralModelLabel = 'مقالاhhت';
 
     public static function form(Form $form): Form
     {
