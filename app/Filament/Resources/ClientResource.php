@@ -28,7 +28,7 @@ class ClientResource extends Resource
     protected static ?string $navigationGroup = 'مدیریت کاربران';
 
     protected static ?string $slug = 'clients';
-    protected static ?string $modelLabel = 'کاربر';
+    protected static ?string $modelLabel = 'کاربhhhر';
 
     public static function form(Form $form): Form
     {
