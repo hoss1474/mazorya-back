@@ -19,7 +19,7 @@ class BlogResource extends Resource
     protected static ?string $model = Blog::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $navigationLabel = 'مقالات';
+    protected static ?string $navigationLabel = 'مقالاdت';
     protected static ?string $modelLabel = 'مقاله';
     protected static ?string $pluralModelLabel = 'مقالاhhت';
 
