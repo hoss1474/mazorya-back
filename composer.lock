@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4e67b0173bd96535347aa197b24872a4",
+    "content-hash": "bd481e9d1c096235276bf8450b0df0f5",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -346,6 +346,74 @@
                 "source": "https://github.com/beberlei/assert/tree/v3.3.3"
             },
             "time": "2024-07-15T13:18:35+00:00"
+        },
+        {
+            "name": "benjaminhansen/filament-range-field",
+            "version": "v0.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/benjaminhansen/filament-range-field.git",
+                "reference": "cd74b7a46043bc9f28c7c8ffd6dada9fbee4a3e6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/benjaminhansen/filament-range-field/zipball/cd74b7a46043bc9f28c7c8ffd6dada9fbee4a3e6",
+                "reference": "cd74b7a46043bc9f28c7c8ffd6dada9fbee4a3e6",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0",
+                "illuminate/contracts": "^8.0|^9.0|^10.0|^11.0",
+                "php": "^8.0",
+                "spatie/laravel-package-tools": "^1.9.2"
+            },
+            "require-dev": {
+                "nunomaduro/collision": "^6.0",
+                "nunomaduro/larastan": "^2.0.1",
+                "orchestra/testbench": "^7.0",
+                "pestphp/pest": "^1.21",
+                "pestphp/pest-plugin-laravel": "^1.1",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "phpunit/phpunit": "^9.5",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Yepsua\\Filament\\FilamentRangeFieldServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Yepsua\\Filament\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Omar Yepez",
+                    "email": "oyepez003@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The missing range/slider field for the Filament forms. Updated for Laravel 11.",
+            "homepage": "https://github.com/yepsua/filament-range-field",
+            "keywords": [
+                "filament-range-field",
+                "laravel",
+                "yepsua"
+            ],
+            "support": {
+                "source": "https://github.com/benjaminhansen/filament-range-field/tree/v0.0.1"
+            },
+            "time": "2025-01-28T16:51:39+00:00"
         },
         {
             "name": "bezhansalleh/filament-google-analytics",

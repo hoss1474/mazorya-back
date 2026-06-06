@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClientResource\Pages;
 use App\Models\Client;
-use App\Models\Address;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -28,18 +27,23 @@ class ClientResource extends Resource
     protected static ?string $navigationGroup = 'مدیریت کاربران';
 
     protected static ?string $slug = 'clients';
-    protected static ?string $modelLabel = 'کاربhhhر';
+    protected static ?string $modelLabel = 'کاربر';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('first_name')
-                    ->label('نام')
+
+                Forms\Components\TextInput::make('company_name')
+                ->label('پروژه')
+                ->maxLength(255),
+
+                Forms\Components\TextInput::make('website')
+                    ->label('وبسایت')
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('last_name')
-                    ->label('فامیلی')
+                Forms\Components\TextInput::make('full_name')
+                    ->label('نام')
                     ->maxLength(255),
 
                 Forms\Components\TextInput::make('email')
@@ -65,18 +69,18 @@ class ClientResource extends Resource
                     )
                     ->maxLength(255),
 
-                FileUpload::make('profile_image')
-                    ->label('تصویر پروفایل')
-                    ->disk('public')
-                    ->directory('user-profiles')
-                    ->image()
-                    ->acceptedFileTypes([
-                        'image/jpeg',
-                        'image/png',
-                        'image/jpg',
-                        'image/gif'
-                    ])
-                    ->maxSize(3048),
+//                FileUpload::make('avatar')
+//                    ->label('تصویر پروفایل')
+//                    ->disk('public')
+//                    ->directory('user-profiles')
+//                    ->image()
+//                    ->acceptedFileTypes([
+//                        'image/jpeg',
+//                        'image/png',
+//                        'image/jpg',
+//                        'image/gif'
+//                    ])
+//                    ->maxSize(3048),
             ]);
     }
 
@@ -84,27 +88,31 @@ class ClientResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('first_name')
-                    ->label('نام')
+
+                Tables\Columns\TextColumn::make('company_name')
+                    ->label('پروژه')
                     ->sortable()
                     ->searchable()
-                    ->url(fn ($record) => static::getUrl('view', ['record' => $record->id]))
-                    ->color('primary'),
+                     ->url(fn ($record) => static::getUrl('edit', ['record' => $record->id]))
+                     ->color('info'),
 
-                Tables\Columns\TextColumn::make('last_name')
-                    ->label('فامیلی')
+                Tables\Columns\TextColumn::make('full_name')
+                    ->label('نام')
                     ->sortable()
                     ->searchable(),
+
 
                 Tables\Columns\TextColumn::make('email')
                     ->label('ایمیل')
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('project')
-                    ->label('پروژه')
+                Tables\Columns\TextColumn::make('website')
+                    ->label('وبسایت')
                     ->sortable()
                     ->searchable(),
+
+
 
                 Tables\Columns\TextColumn::make('phone')
                     ->label('شماره موبایل')
@@ -166,7 +174,7 @@ class ClientResource extends Resource
             'index' => Pages\ListClients::route('/'),
             'create' => Pages\CreateClient::route('/create'),
             'edit' => Pages\EditClient::route('/{record}/edit'),
-            'view' => Pages\ViewClient::route('/{record}'),
+//            'view' => Pages\ViewClient::route('/{record}'),
         ];
     }
 }

@@ -13,15 +13,28 @@ class Client extends Authenticatable implements JWTSubject
     protected $table = 'clients';
 
     protected $fillable = [
-        'first_name',
-        'last_name',
+        'company_name',
+        'website',
+        'full_name',
         'email',
         'phone',
         'password',
-        'profile_image',
+        'avatar',
         'is_active',
         'phone_verified_at',
         'last_login_at',
+        'created_start',
+        'created_end',
+        'status',
+        'amount',
+        'amount_status_1',
+        'amount_status_2',
+        'amount_status_3',
+        'amount_status_4',
+        'description',
+        'project_type',
+        'project_progress',
+
     ];
 
     protected $hidden = [
@@ -45,10 +58,7 @@ class Client extends Authenticatable implements JWTSubject
         return [];
     }
 
-    public function getFullNameAttribute()
-    {
-        return "{$this->first_name} {$this->last_name}";
-    }
+
 
     public function scopeActive($query)
     {
