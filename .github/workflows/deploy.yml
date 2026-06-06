@@ -1,57 +1,36 @@
-name: Deploy to Server (FTP)
+name: Deploy Laravel to Hostinger
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]  # اگر برنچ شما master است، این را تغییر دهید
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: 📂 Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: 🎯 Setup PHP
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          extensions: mbstring, bcmath, pdo_mysql, zip, gd
+          php-version: '8.2'  # نسخه PHP سرور خود را وارد کنید
 
-      - name: 📦 Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
 
-      - name: 📤 FTP Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy to Hostinger via SSH
+        uses: appleboy/ssh-action@master
         with:
-          server: 82.29.191.204
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          local-dir: ./
-          server-dir: /domains/cardifygroup.com/public_html/api/mazorya-back/
-          exclude: |
-            .git
-            .github
-            node_modules
-            .env
-            storage.zip
-            .gitignore
-            .editorconfig
-            tests/
-            storage/logs/*.log
-
-      - name: 🔧 Run Laravel commands (via SSH)
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: 82.29.191.204
-          username: u573287159
-          port: 65002
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back
+            cd /home/u573287159/domains/cardifygroup.com/public_html/api/mazorya-back/
+            git pull origin main
             composer install --no-dev --optimize-autoloader --no-interaction
             php artisan migrate --force
-            php artisan optimize:clear
-            php artisan optimize
-            chmod -R 775 storage bootstrap/cache
-            echo "✅ Laravel deployment complete!"
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
