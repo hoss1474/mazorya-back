@@ -49,7 +49,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 // اگر نیاز دارید، uncomment کنید
-                // FilamentGoogleAnalyticsPlugin::make(),
+                 FilamentGoogleAnalyticsPlugin::make(),
 
                 FilamentFullCalendarPlugin::make()
                     ->selectable()
