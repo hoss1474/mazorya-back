@@ -8,29 +8,12 @@ class Cors
 {
     public function handle($request, Closure $next)
     {
-        // لیست مسیرهای مجاز
-        $allowedRoutes = ['api/*', 'api/auth/login', 'api/auth/register', 'api/user/*'];
-
-        // بررسی مسیر فعلی
-        $path = $request->path();
-        $isAllowed = false;
-        foreach ($allowedRoutes as $route) {
-            if (fnmatch($route, $path)) {
-                $isAllowed = true;
-                break;
-            }
-        }
-
-        if (!$isAllowed) {
-            return $next($request);
-        }
-
-        // Handle preflight OPTIONS request
-        if ($request->getMethod() === 'OPTIONS') {
+        // اگر درخواست OPTIONS (preflight) بود
+        if ($request->isMethod('OPTIONS')) {
             return response('', 200)
                 ->header('Access-Control-Allow-Origin', 'https://cardifygroup.com')
                 ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-XSRF-TOKEN')
+                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept')
                 ->header('Access-Control-Allow-Credentials', 'true')
                 ->header('Access-Control-Max-Age', '86400');
         }
@@ -39,7 +22,7 @@ class Cors
 
         $response->headers->set('Access-Control-Allow-Origin', 'https://cardifygroup.com');
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
         $response->headers->set('Access-Control-Allow-Credentials', 'true');
 
         return $response;
