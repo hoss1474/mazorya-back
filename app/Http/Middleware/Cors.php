@@ -8,6 +8,23 @@ class Cors
 {
     public function handle($request, Closure $next)
     {
+        // لیست مسیرهای مجاز
+        $allowedRoutes = ['api/*', 'api/auth/login', 'api/auth/register', 'api/user/*'];
+
+        // بررسی مسیر فعلی
+        $path = $request->path();
+        $isAllowed = false;
+        foreach ($allowedRoutes as $route) {
+            if (fnmatch($route, $path)) {
+                $isAllowed = true;
+                break;
+            }
+        }
+
+        if (!$isAllowed) {
+            return $next($request);
+        }
+
         // Handle preflight OPTIONS request
         if ($request->getMethod() === 'OPTIONS') {
             return response('', 200)
