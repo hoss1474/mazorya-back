@@ -10,6 +10,8 @@ use App\Filament\Widgets\EventsCalendarWidget;
 use App\Filament\Widgets\RecentMessagesWidget;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Facades\Gate;
+use App\Models\ClientProject;
+use App\Observers\ClientProjectObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,8 +20,12 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    public function boot()
+    public function boot(): void
     {
-
+        ClientProject::observe(ClientProjectObserver::class);
     }
 }
+
+
+
+

@@ -15,7 +15,7 @@ class Client extends Authenticatable implements JWTSubject
     protected $fillable = [
         'company_name',
         'website',
-        'full_name',
+        'last_name',
         'email',
         'phone',
         'password',
@@ -23,17 +23,6 @@ class Client extends Authenticatable implements JWTSubject
         'is_active',
         'phone_verified_at',
         'last_login_at',
-        'created_start',
-        'created_end',
-        'status',
-        'amount',
-        'amount_status_1',
-        'amount_status_2',
-        'amount_status_3',
-        'amount_status_4',
-        'description',
-        'project_type',
-        'project_progress',
 
     ];
 
@@ -63,5 +52,18 @@ class Client extends Authenticatable implements JWTSubject
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+    public function projects()
+    {
+        return $this->hasMany(ClientProject::class);
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(ClientMessage::class);
+    }
+    public function payments()
+    {
+        return $this->hasMany(ClientProjectPayment::class, 'client_project_id');
     }
 }

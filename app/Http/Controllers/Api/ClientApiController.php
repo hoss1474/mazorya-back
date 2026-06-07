@@ -32,8 +32,7 @@ class ClientApiController extends Controller
     {
         // 1. اعتبارسنجی
         $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
+            'full_name' => 'required|string|max:255',
             'email' => 'required|email|unique:clients,email',
             'phone' => 'required|string|unique:clients,phone|max:20',
             'password' => 'required|string|min:8',
@@ -41,8 +40,7 @@ class ClientApiController extends Controller
 
         // 2. ایجاد کاربر (غیرفعال تا تایید شماره)
         $client = Client::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
+            'full_name' => $request->full_name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
@@ -177,17 +175,6 @@ class ClientApiController extends Controller
         return $this->respondWithToken($newToken, 'توکن با موفقیت تمدید شد');
     }
 
-    public function me()
-    {
-        $client = auth('api')->user();
-
-        return response()->json([
-            'is_status' => true,
-            'statusCode' => 200,
-            'message' => 'اطلاعات کاربر',
-            'data' => $client,
-        ]);
-    }
 
     public function logout()
     {
@@ -245,40 +232,5 @@ class ClientApiController extends Controller
         ]);
     }
 
-    public function changePassword(Request $request)
-    {
-        $request->validate([
-            'code' => 'required|string',
-            'password' => 'required|string|min:8',
-        ]);
 
-        $client = Client::where('reset_code', $request->code)->first();
-
-        if (!$client) {
-            return response()->json([
-                'is_status' => false,
-                'statusCode' => 422,
-                'message' => 'کد نامعتبر است.',
-            ], 422);
-        }
-
-        if (!$client->reset_code_expires_at || now()->gt($client->reset_code_expires_at)) {
-            return response()->json([
-                'is_status' => false,
-                'statusCode' => 422,
-                'message' => 'کد منقضی شده است.',
-            ], 422);
-        }
-
-        $client->password = Hash::make($request->password);
-        $client->reset_code = null;
-        $client->reset_code_expires_at = null;
-        $client->save();
-
-        return response()->json([
-            'is_status' => true,
-            'statusCode' => 200,
-            'message' => 'رمز عبور با موفقیت تغییر کرد.',
-        ]);
-    }
 }

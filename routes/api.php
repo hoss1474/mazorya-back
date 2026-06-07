@@ -8,6 +8,12 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ServicesController;
 use App\Http\Controllers\Api\TelegramController;
 use App\Http\Controllers\Api\WaitingListController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ClientApiController;
+use App\Http\Controllers\Api\ClientProjectController;
+use App\Http\Controllers\Api\ClientMessageController;
+use App\Http\Controllers\Api\ClientProjectPaymentController;
+use App\Http\Controllers\Api\ClientInvoiceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,20 +22,85 @@ use Illuminate\Support\Facades\Route;
 | Public Routes (Read-Only)
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| Auth Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/auth/login', [ClientApiController::class, 'login']);
+Route::post('/auth/register', [ClientApiController::class, 'register']);
+Route::post('/auth/verify-otp', [ClientApiController::class, 'verifyOtp']);
+Route::post('/auth/resend-otp', [ClientApiController::class, 'resendOtp']);
+
+
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (JWT)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:api')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auth
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/auth/logout', [ClientApiController::class, 'logout']);
+    Route::post('/auth/refresh', [ClientApiController::class, 'refresh']);
 
 
 
-// ================= AUTH =================
-Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+    /*
+    |--------------------------------------------------------------------------
+    | Profile
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/user/profile', [ProfileController::class, 'show']);
+    Route::put('/user/profile', [ProfileController::class, 'update']);
+    Route::put('/user/password', [ProfileController::class, 'changePassword']);
+    Route::post('/user/avatar', [ProfileController::class, 'uploadAvatar']);
 
-    Route::middleware('auth:api')->group(function () {
-        Route::get('/me', [AuthController::class, 'me']);
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::post('/refresh', [AuthController::class, 'refresh']);
-    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Projects
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/user/projects', [ClientProjectController::class, 'index']);
+    Route::get('/user/projects/{id}', [ClientProjectController::class, 'show']);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payments (Project Installments)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/user/projects/{id}/payments', [ClientProjectPaymentController::class, 'index']);
+    Route::get('/user/projects/{projectId}/payments/{paymentId}', [ClientProjectPaymentController::class, 'show']);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Messages (Chat / Ticket)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/user/messages', [ClientMessageController::class, 'index']);
+    Route::post('/user/messages', [ClientMessageController::class, 'store']);
+    Route::patch('/user/messages/{id}/read', [ClientMessageController::class, 'markAsRead']);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Invoices
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/user/invoices', [ClientInvoiceController::class, 'index']);
+    Route::post('/user/invoices/upload', [ClientInvoiceController::class, 'upload']);
 });
+
+
 // روت‌های عمومی برای نمایش اطلاعات (بدون نیاز به لاگین)
 Route::get('/projects', [ProjectController::class, 'index']);
 // برای API
@@ -54,6 +125,19 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post('/waiting-list', [WaitingListController::class, 'store']);
     Route::post('/chat/send', [ChatController::class, 'send']);
 });
+
+Route::middleware('auth:api')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+
+});
+
+
+
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------

@@ -42,7 +42,7 @@ class ClientResource extends Resource
                     ->label('وبسایت')
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('full_name')
+                Forms\Components\TextInput::make('last_name')
                     ->label('نام')
                     ->maxLength(255),
 
@@ -69,18 +69,18 @@ class ClientResource extends Resource
                     )
                     ->maxLength(255),
 
-//                FileUpload::make('avatar')
-//                    ->label('تصویر پروفایل')
-//                    ->disk('public')
-//                    ->directory('user-profiles')
-//                    ->image()
-//                    ->acceptedFileTypes([
-//                        'image/jpeg',
-//                        'image/png',
-//                        'image/jpg',
-//                        'image/gif'
-//                    ])
-//                    ->maxSize(3048),
+                FileUpload::make('avatar')
+                    ->label('تصویر پروفایل')
+                    ->disk('api_public')
+                    ->directory('user-profiles')
+                    ->image()
+                    ->acceptedFileTypes([
+                        'image/jpeg',
+                        'image/png',
+                        'image/jpg',
+                        'image/gif'
+                    ])
+                    ->maxSize(3048),
             ]);
     }
 
@@ -96,7 +96,7 @@ class ClientResource extends Resource
                      ->url(fn ($record) => static::getUrl('edit', ['record' => $record->id]))
                      ->color('info'),
 
-                Tables\Columns\TextColumn::make('full_name')
+                Tables\Columns\TextColumn::make('last_name')
                     ->label('نام')
                     ->sortable()
                     ->searchable(),
@@ -177,4 +177,5 @@ class ClientResource extends Resource
 //            'view' => Pages\ViewClient::route('/{record}'),
         ];
     }
+
 }
