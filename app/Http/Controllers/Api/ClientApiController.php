@@ -73,79 +73,79 @@ class ClientApiController extends Controller
         ]);
     }
 
-    /**
-     * تایید کد OTP
-     */
-    public function verifyOtp(Request $request)
-    {
-        $request->validate([
-            'phone' => 'required|string',
-            'code' => 'required|string|size:6',
-        ]);
+//    /**
+//     * تایید کد OTP
+//     */
+//    public function verifyOtp(Request $request)
+//    {
+//        $request->validate([
+//            'phone' => 'required|string',
+//            'code' => 'required|string|size:6',
+//        ]);
+//
+//        $verified = OtpHelper::verifyOtp($request->phone, $request->code);
+//
+//        if (!$verified) {
+//            return response()->json([
+//                'is_status' => false,
+//                'statusCode' => 400,
+//                'message' => 'کد تایید نامعتبر یا منقضی شده است.',
+//            ], 400);
+//        }
+//
+//        // فعال کردن حساب کاربری
+//        $client = Client::where('phone', $request->phone)->first();
+//        $client->update(['is_active' => true]);
+//
+//        // ارسال ایمیل خوش‌آمدگویی (اختیاری)
+//        // Mail::to($client->email)->send(new WelcomeMail($client));
+//
+//        return response()->json([
+//            'is_status' => true,
+//            'statusCode' => 200,
+//            'message' => 'حساب کاربری شما با موفقیت فعال شد.',
+//            'data' => [
+//                'token' => $client->createToken('auth-token')->plainTextToken,
+//            ]
+//        ]);
+//    }
 
-        $verified = OtpHelper::verifyOtp($request->phone, $request->code);
-
-        if (!$verified) {
-            return response()->json([
-                'is_status' => false,
-                'statusCode' => 400,
-                'message' => 'کد تایید نامعتبر یا منقضی شده است.',
-            ], 400);
-        }
-
-        // فعال کردن حساب کاربری
-        $client = Client::where('phone', $request->phone)->first();
-        $client->update(['is_active' => true]);
-
-        // ارسال ایمیل خوش‌آمدگویی (اختیاری)
-        // Mail::to($client->email)->send(new WelcomeMail($client));
-
-        return response()->json([
-            'is_status' => true,
-            'statusCode' => 200,
-            'message' => 'حساب کاربری شما با موفقیت فعال شد.',
-            'data' => [
-                'token' => $client->createToken('auth-token')->plainTextToken,
-            ]
-        ]);
-    }
-
-    /**
-     * ارسال مجدد کد OTP
-     */
-    public function resendOtp(Request $request)
-    {
-        $request->validate([
-            'phone' => 'required|string|exists:clients,phone',
-        ]);
-
-        $client = Client::where('phone', $request->phone)->first();
-
-        // بررسی اینکه قبلاً تایید نشده باشد
-        if ($client->phone_verified_at || $client->is_active) {
-            return response()->json([
-                'is_status' => false,
-                'statusCode' => 400,
-                'message' => 'این شماره قبلاً تایید شده است.',
-            ], 400);
-        }
-
-        $otpSent = OtpHelper::sendOtp($request->phone);
-
-        if (!$otpSent) {
-            return response()->json([
-                'is_status' => false,
-                'statusCode' => 500,
-                'message' => 'خطا در ارسال کد تایید. لطفاً دوباره تلاش کنید.',
-            ], 500);
-        }
-
-        return response()->json([
-            'is_status' => true,
-            'statusCode' => 200,
-            'message' => 'کد تایید مجدداً ارسال شد.',
-        ]);
-    }
+//    /**
+//     * ارسال مجدد کد OTP
+//     */
+//    public function resendOtp(Request $request)
+//    {
+//        $request->validate([
+//            'phone' => 'required|string|exists:clients,phone',
+//        ]);
+//
+//        $client = Client::where('phone', $request->phone)->first();
+//
+//        // بررسی اینکه قبلاً تایید نشده باشد
+//        if ($client->phone_verified_at || $client->is_active) {
+//            return response()->json([
+//                'is_status' => false,
+//                'statusCode' => 400,
+//                'message' => 'این شماره قبلاً تایید شده است.',
+//            ], 400);
+//        }
+//
+//        $otpSent = OtpHelper::sendOtp($request->phone);
+//
+//        if (!$otpSent) {
+//            return response()->json([
+//                'is_status' => false,
+//                'statusCode' => 500,
+//                'message' => 'خطا در ارسال کد تایید. لطفاً دوباره تلاش کنید.',
+//            ], 500);
+//        }
+//
+//        return response()->json([
+//            'is_status' => true,
+//            'statusCode' => 200,
+//            'message' => 'کد تایید مجدداً ارسال شد.',
+//        ]);
+//    }
 
     public function login(Request $request)
     {
@@ -229,6 +229,48 @@ class ClientApiController extends Controller
             'data' => [
                 'id' => $client->id,
             ]
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $client = Client::where('email', $request->email)->first();
+
+        if (!$client) {
+            return response()->json([
+                'is_status' => false,
+                'message' => 'کاربر یافت نشد'
+            ], 404);
+        }
+
+        if ($client->reset_code !== $request->code) {
+            return response()->json([
+                'is_status' => false,
+                'message' => 'کد نامعتبر است'
+            ], 422);
+        }
+
+        if (Carbon::now()->gt($client->reset_code_expires_at)) {
+            return response()->json([
+                'is_status' => false,
+                'message' => 'کد منقضی شده است'
+            ], 422);
+        }
+
+        $client->password = Hash::make($request->password);
+        $client->reset_code = null;
+        $client->reset_code_expires_at = null;
+        $client->save();
+
+        return response()->json([
+            'is_status' => true,
+            'message' => 'رمز عبور با موفقیت تغییر کرد'
         ]);
     }
 

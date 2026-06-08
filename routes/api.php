@@ -52,6 +52,7 @@ Route::middleware('auth:api')->group(function () {
 
 
 
+
     /*
     |--------------------------------------------------------------------------
     | Profile
@@ -99,7 +100,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user/invoices', [ClientInvoiceController::class, 'index']);
     Route::post('/user/invoices/upload', [ClientInvoiceController::class, 'upload']);
 });
-
+Route::post('/forgot-password', [ClientApiController::class, 'forgotPassword']);
+Route::post('/reset-password', [ClientApiController::class, 'resetPassword']);
 
 // روت‌های عمومی برای نمایش اطلاعات (بدون نیاز به لاگین)
 Route::get('/projects', [ProjectController::class, 'index']);
