@@ -30,16 +30,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [ClientApiController::class, 'login']);
 Route::post('/auth/register', [ClientApiController::class, 'register']);
-Route::post('/auth/verify-otp', [ClientApiController::class, 'verifyOtp']);
-Route::post('/auth/resend-otp', [ClientApiController::class, 'resendOtp']);
-
 
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (JWT)
 |--------------------------------------------------------------------------
 */
-
 Route::middleware('auth:api')->group(function () {
 
     /*
@@ -50,9 +46,6 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/auth/logout', [ClientApiController::class, 'logout']);
     Route::post('/auth/refresh', [ClientApiController::class, 'refresh']);
 
-
-
-
     /*
     |--------------------------------------------------------------------------
     | Profile
@@ -62,7 +55,6 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/user/profile', [ProfileController::class, 'update']);
     Route::put('/user/password', [ProfileController::class, 'changePassword']);
     Route::post('/user/avatar', [ProfileController::class, 'uploadAvatar']);
-
 
     /*
     |--------------------------------------------------------------------------
@@ -100,6 +92,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user/invoices', [ClientInvoiceController::class, 'index']);
     Route::post('/user/invoices/upload', [ClientInvoiceController::class, 'upload']);
 });
+
+
 Route::post('/forgot-password', [ClientApiController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientApiController::class, 'resetPassword']);
 
