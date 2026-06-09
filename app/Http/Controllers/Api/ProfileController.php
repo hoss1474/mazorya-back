@@ -26,13 +26,11 @@ class ProfileController extends Controller
 
 
 
-// پردازش آواتار
         $avatarUrl = null;
 
         if ($client->avatar) {
-            $avatarUrl = Storage::url($client->avatar);
+            $avatarUrl = Storage::disk('api_public')->url(ltrim($client->avatar, '/'));
         }
-
         return response()->json([
             'status' => true,
             'data' => [
