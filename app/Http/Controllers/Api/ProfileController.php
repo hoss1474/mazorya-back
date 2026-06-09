@@ -26,11 +26,7 @@ class ProfileController extends Controller
 
 
 
-        $avatarUrl = null;
 
-        if ($client->avatar) {
-            $avatarUrl = Storage::disk('api_public')->url(ltrim($client->avatar, '/'));
-        }
         return response()->json([
             'status' => true,
             'data' => [
@@ -40,7 +36,7 @@ class ProfileController extends Controller
                 'phone' => $client->phone,
                 'company_name' => $client->company_name ?? null, // اگه فیلد داری
                 'website' => $client->website ?? null, // اگه فیلد داری
-                'avatar' => $avatarUrl,
+                'avatar' => $client->avatar_url,
                 'status' => $client->status ?? 'active', // اگه فیلد status داری
                 'created_at' => $client->created_at ? $client->created_at->toISOString() : null,
 

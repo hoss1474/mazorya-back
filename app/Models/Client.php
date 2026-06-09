@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class Client extends Authenticatable implements JWTSubject
@@ -65,5 +66,14 @@ class Client extends Authenticatable implements JWTSubject
     public function payments()
     {
         return $this->hasMany(ClientProjectPayment::class, 'client_project_id');
+    }
+
+    public function getAvatarUrlAttribute()
+    {
+        if (!$this->avatar) {
+            return null;
+        }
+
+        return Storage::disk('api_public')->url(ltrim($this->avatar, '/'));
     }
 }
