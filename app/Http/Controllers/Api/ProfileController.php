@@ -26,7 +26,7 @@ class ProfileController extends Controller
         // پردازش آواتار
         $avatarUrl = null;
         if ($client->avatar) {
-            $avatarUrl = asset('uploads/' . $client->avatar);
+            $avatarUrl = asset($client->avatar);
         }
 
         return response()->json([
