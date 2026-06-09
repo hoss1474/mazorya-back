@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ClientProjectResource\Pages;
 use App\Models\ClientProject;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -70,6 +71,20 @@ class ClientProjectResource extends Resource
 
                 Textarea::make('description')
                     ->label('توضیحات'),
+
+                FileUpload::make('file_path')
+                    ->label('تصویر فاکتور')
+                    ->disk('api_public')
+                    ->directory('file_path')
+                    ->image()
+                    ->acceptedFileTypes([
+                        'image/jpeg',
+                        'image/png',
+                        'image/jpg',
+                        'image/gif'
+                    ])
+                    ->maxSize(1048),
+
 
                 Repeater::make('payments')
                     ->relationship('payments')
