@@ -7,6 +7,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -23,10 +24,13 @@ class ProfileController extends Controller
             ], 401);
         }
 
-        // پردازش آواتار
+
+
+// پردازش آواتار
         $avatarUrl = null;
+
         if ($client->avatar) {
-            $avatarUrl = asset($client->avatar);
+            $avatarUrl = Storage::url($client->avatar);
         }
 
         return response()->json([

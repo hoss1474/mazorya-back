@@ -65,6 +65,7 @@ class EditClient extends EditRecord
 
             TextInput::make('phone')
                 ->label('موبایل'),
+
             FileUpload::make('avatar')
                 ->label('تصویر پروفایل')
                 ->disk('api_public')
