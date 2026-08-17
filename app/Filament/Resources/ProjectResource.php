@@ -30,6 +30,18 @@ class ProjectResource extends Resource
             /* ================= داده‌های ثابت پروژه ================= */
             Section::make('اطلاعات اصلی')
                 ->schema([
+                    Select::make('category')
+                        ->label('دسته بندی')
+                        ->options([
+
+                            'Website' => 'وبسایت',
+                            'UI.UX' => 'ui.ux',
+                            'SEO' => 'سئو',
+                            'Graphic' => 'گرافیک',
+                            'Social Media' => 'سوشال مدیا',
+                        ])
+                        ->required()
+                        ->columnSpanFull(),
                     FileUpload::make('image')
                         ->label('تصویر اصلی')
                         ->image()

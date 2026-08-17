@@ -27,6 +27,7 @@ class ProjectController extends Controller
 
                 return [
                     'id' => $project->id,
+                    'category' =>$project->category,
                     'name' => $translation?->name,
                     'slug' => $translation?->slug, // اضافه شد
                     'description' => $translation?->description,
