@@ -4,7 +4,7 @@ namespace App\Filament\Resources\ClientResource\Pages;
 
 use App\Filament\Resources\ClientResource;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists\Infolist;
+use Filament\Schemas\Schema;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
@@ -18,9 +18,9 @@ class ViewClient extends ViewRecord
         return 'مشاهده فاکتور سفارش';
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->schema([
                 Section::make('اطلاعات مشتری')
                     ->schema([

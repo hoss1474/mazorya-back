@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ClientResource\Pages;
 
 use App\Filament\Resources\ClientResource;
+
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -11,22 +12,25 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 
 class EditClient extends EditRecord
 {
     protected static string $resource = ClientResource::class;
+
+    // ==========================================
+    // PAGE TITLE
+    // ==========================================
 
     public function getTitle(): string
     {
         return 'مدیریت مشتری و پروژه‌ها';
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Header Action
-    |--------------------------------------------------------------------------
-    */
+    // ==========================================
+    // HEADER ACTIONS
+    // ==========================================
+
     protected function getHeaderActions(): array
     {
         return [
@@ -34,114 +38,126 @@ class EditClient extends EditRecord
                 ->label('خروجی فاکتور')
                 ->icon('heroicon-o-document-text')
                 ->color('primary')
-                ->action(function () {
-                    // PDF later
-                }),
+                ->tooltip('قابلیت خروجی PDF هنوز فعال نشده است')
+                ->disabled(),
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Form
-    |--------------------------------------------------------------------------
-    */
-    public function form(Form $form): Form
+    // ==========================================
+    // EDIT FORM
+    // ==========================================
+
+    public function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema
+            ->components([
 
-            /*
-            |--------------------------------------------------------------------------
-            | اطلاعات مشتری
-            |--------------------------------------------------------------------------
-            */
-            TextInput::make('company_name')
-                ->label('نام شرکت'),
+                // ==================================
+                // CLIENT INFORMATION
+                // ==================================
 
-            TextInput::make('full_name')
-                ->label('نام'),
+                TextInput::make('company_name')
+                    ->label('نام شرکت')
+                    ->maxLength(255),
 
-            TextInput::make('email')
-                ->label('ایمیل'),
+                TextInput::make('last_name')
+                    ->label('نام')
+                    ->maxLength(255),
 
-            TextInput::make('phone')
-                ->label('موبایل'),
+                TextInput::make('email')
+                    ->label('ایمیل')
+                    ->email()
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
 
-            FileUpload::make('avatar')
-                ->label('تصویر پروفایل')
-                ->disk('api_public')
-                ->directory('user-profiles')
-                ->image()
-                ->acceptedFileTypes([
-                    'image/jpeg',
-                    'image/png',
-                    'image/jpg',
-                    'image/gif'
-                ])
-                ->maxSize(3048),
+                TextInput::make('phone')
+                    ->label('موبایل')
+                    ->tel()
+                    ->required()
+                    ->maxLength(11)
+                    ->rule('regex:/^09[0-9]{9}$/'),
 
+                FileUpload::make('avatar')
+                    ->label('تصویر پروفایل')
+                    ->disk('api_public')
+                    ->directory('user-profiles')
+                    ->image()
+                    ->acceptedFileTypes([
+                        'image/jpeg',
+                        'image/png',
+                        'image/gif',
+                    ])
+                    ->maxSize(3048)
+                    ->columnSpanFull(),
 
-            /*
-            |--------------------------------------------------------------------------
-            | پروژه‌ها
-            |--------------------------------------------------------------------------
-            */
-            Repeater::make('projects')
-                ->relationship('projects')
-                ->label('پروژه‌ها')
-                ->schema([
+                // ==================================
+                // CLIENT PROJECTS
+                // ==================================
 
-                    TextInput::make('project_name')
-                        ->label('نام پروژه')
-                        ->required(),
+                Repeater::make('projects')
+                    ->label('پروژه‌ها')
+                    ->relationship('projects')
+                    ->schema([
 
-                    Select::make('project_type')
-                        ->label('نوع پروژه')
-                        ->options([
-                            'web' => 'سایت',
-                            'app' => 'اپلیکیشن',
-                            'seo' => 'سئو',
-                            'graphic' => 'گرافیک',
-                        ])
-                        ->required(),
+                        TextInput::make('project_name')
+                            ->label('نام پروژه')
+                            ->required()
+                            ->maxLength(255),
 
-                    TextInput::make('project_progress')
-                        ->label('درصد پیشرفت')
-                        ->numeric()
-                        ->suffix('%')
-                        ->minValue(0)
-                        ->maxValue(100),
+                        Select::make('project_type')
+                            ->label('نوع پروژه')
+                            ->options([
+                                'web' => 'سایت',
+                                'app' => 'اپلیکیشن',
+                                'seo' => 'سئو',
+                                'graphic' => 'گرافیک',
+                            ])
+                            ->required(),
 
-                    Select::make('status')
-                        ->label('وضعیت پروژه')
-                        ->options([
-                            'pending' => 'در انتظار',
-                            'processing' => 'در حال انجام',
-                            'completed' => 'تکمیل شده',
-                            'cancelled' => 'لغو شده',
-                        ])
-                        ->default('pending'),
+                        TextInput::make('project_progress')
+                            ->label('درصد پیشرفت')
+                            ->numeric()
+                            ->suffix('%')
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->default(0),
 
-                    TextInput::make('amount')
-                        ->label('مبلغ کل')
-                        ->numeric()
-                        ->prefix('تومان'),
+                        Select::make('status')
+                            ->label('وضعیت پروژه')
+                            ->options([
+                                'pending' => 'در انتظار',
+                                'processing' => 'در حال انجام',
+                                'completed' => 'تکمیل شده',
+                                'cancelled' => 'لغو شده',
+                            ])
+                            ->default('pending'),
 
-                    DateTimePicker::make('created_start')
-                        ->label('شروع'),
+                        TextInput::make('amount')
+                            ->label('مبلغ کل')
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix('تومان'),
 
-                    DateTimePicker::make('created_end')
-                        ->label('پایان'),
+                        DateTimePicker::make('created_start')
+                            ->label('شروع پروژه')
+                            ->seconds(false),
 
-                    Textarea::make('description')
-                        ->label('توضیحات'),
+                        DateTimePicker::make('created_end')
+                            ->label('پایان پروژه')
+                            ->seconds(false)
+                            ->afterOrEqual('created_start'),
 
+                        Textarea::make('description')
+                            ->label('توضیحات')
+                            ->rows(4)
+                            ->columnSpanFull(),
 
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull()
+                    ->addActionLabel('افزودن پروژه'),
 
-                ])
-                ->columns(2)
-                ->columnSpanFull()
-                ->addActionLabel('افزودن پروژه'),
-        ]);
+            ])
+            ->columns(2);
     }
-
 }

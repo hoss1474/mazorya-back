@@ -10,15 +10,16 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
+
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
-use BezhanSalleh\FilamentGoogleAnalytics\FilamentGoogleAnalyticsPlugin;
+use BezhanSalleh\GoogleAnalytics\GoogleAnalyticsPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -29,27 +30,42 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+
             ->colors([
-                'primary' => Color::hex('#ff6b6b'), // یا Color::Red
+                'primary' => Color::hex('#ff6b6b'),
                 'danger' => Color::Rose,
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
                 'info' => Color::Blue,
             ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+
+            ->discoverResources(
+                in: app_path('Filament/Resources'),
+                for: 'App\\Filament\\Resources'
+            )
+
+            ->discoverPages(
+                in: app_path('Filament/Pages'),
+                for: 'App\\Filament\\Pages'
+            )
+
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+
+            ->discoverWidgets(
+                in: app_path('Filament/Widgets'),
+                for: 'App\\Filament\\Widgets'
+            )
+
             ->widgets([
                 Widgets\AccountWidget::class,
                 \App\Filament\Widgets\RecentMessagesWidget::class,
                 \App\Filament\Widgets\PanelUsers::class,
             ])
+
             ->plugins([
-                // اگر نیاز دارید، uncomment کنید
-                 FilamentGoogleAnalyticsPlugin::make(),
+//                GoogleAnalyticsPlugin::make(),
 
                 FilamentFullCalendarPlugin::make()
                     ->selectable()
@@ -57,6 +73,7 @@ class AdminPanelProvider extends PanelProvider
                     ->timezone(config('app.timezone'))
                     ->locale(config('app.locale')),
             ])
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -67,6 +84,7 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+
             ->authMiddleware([
                 Authenticate::class,
             ]);
