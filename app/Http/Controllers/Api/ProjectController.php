@@ -5,60 +5,49 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\ProjectTranslation;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProjectController extends Controller
 {
+    private const LANGUAGES = ['fa', 'en', 'de', 'fr', 'es', 'ar'];
+
     /**
-     * گرفتن همه پروژه‌های فعال با ترجمه بر اساس زبان فعلی
+     * GET /api/projects?lang=en
+     * GET /api/projects?lang=en&limit=6
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $lang = $request->get('lang', app()->getLocale());
+        $validated = $request->validate([
+            'lang' => ['sometimes', 'required', 'string', 'in:fa,en,de,fr,es,ar'],
+            'limit' => ['sometimes', 'required', 'integer', 'min:1', 'max:100'],
+        ]);
 
-        $projects = Project::with(['translations' => function ($query) use ($lang) {
-            $query->where('lang', $lang);
-        }])
+        $lang = $validated['lang'] ?? app()->getLocale();
+
+        // Only return projects that have a translation in the requested language.
+        // This guarantees each returned slug can be used in /projects/{lang}/{slug}.
+        $query = Project::query()
             ->where('is_active', true)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($project) use ($lang) {
-                $translation = $project->translation($lang);
+            ->whereHas('translations', fn ($query) => $query->where('lang', $lang))
+            ->with([
+                'translations' => fn ($query) => $query->where('lang', $lang),
+            ])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
-                return [
-                    'id' => $project->id,
-                    'category' =>$project->category,
-                    'name' => $translation?->name,
-                    'slug' => $translation?->slug, // اضافه شد
-                    'description' => $translation?->description,
-                    'sections' => [
-                        [
-                            'title' => $translation?->title_1,
-                            'description' => $translation?->description_1,
-                        ],
-                        [
-                            'title' => $translation?->title_2,
-                            'description' => $translation?->description_2,
-                        ],
-                        [
-                            'title' => $translation?->title_3,
-                            'description' => $translation?->description_3,
-                        ],
-                        [
-                            'title' => $translation?->title_4,
-                            'description' => $translation?->description_4,
-                        ],
-                    ],
-                    'images' => [
-                        'image' => $project->image_url,
-                        'image2' => $project->image2_url,
-                    ],
-                    'url' => $project->url,
-                    'is_active' => $project->is_active,
-                    'created_at' => $project->created_at,
-                    'updated_at' => $project->updated_at,
-                ];
-            });
+        if (isset($validated['limit'])) {
+            $query->limit((int) $validated['limit']);
+        }
+
+        $projects = $query->get()
+            ->map(function (Project $project) use ($lang): array {
+                $translation = $project->translations->firstWhere('lang', $lang);
+
+                return $this->formatProject($project, $translation);
+            })
+            ->values();
 
         return response()->json([
             'status' => true,
@@ -67,63 +56,171 @@ class ProjectController extends Controller
     }
 
     /**
-     * گرفتن جزئیات یک پروژه با ترجمه بر اساس زبان و slug
+     * GET /api/projects/en/nova-studio
+     * GET /api/projects/en/34
      */
-    public function show(Request $request, $lang, $slug)
+    public function show(string $lang, string $slug): JsonResponse
     {
-        // ۱. پیدا کردن ترجمه به همراه مدل اصلی پروژه
-        // استفاده از with('project') باعث می‌شود کوئری اضافه برای هر فیلد زده نشود
-        $translation = ProjectTranslation::with('project')
-            ->where('slug', $slug)
-            ->where('lang', $lang)
-            ->first();
-
-        // ۲. بررسی وجود ترجمه و وضعیت فعال بودن پروژه
-        // اگر ترجمه پیدا نشد یا پروژه مربوطه وجود نداشت یا غیرفعال بود -> 404
-        if (!$translation || !$translation->project || !$translation->project->is_active) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Project not found or is inactive.',
-            ], 404);
+        if (! in_array($lang, self::LANGUAGES, true)) {
+            return $this->projectNotFound();
         }
 
-        $project = $translation->project;
+        // Preserve the existing numeric-ID route behavior.
+        if (ctype_digit($slug)) {
+            $project = Project::query()
+                ->where('is_active', true)
+                ->with([
+                    'translations' => fn ($query) => $query->where('lang', $lang),
+                ])
+                ->find($slug);
 
-        // ۳. بازگرداندن پاسخ استاندارد
+            $translation = $project?->translations->firstWhere('lang', $lang);
+
+            if (! $project || ! $translation) {
+                return $this->projectNotFound();
+            }
+
+            return response()->json([
+                'status' => true,
+                'data' => $this->formatProject($project, $translation),
+            ]);
+        }
+
+        // A slug is unique per language, not globally.
+        $translation = ProjectTranslation::query()
+            ->with('project')
+            ->where('lang', $lang)
+            ->where('slug', $slug)
+            ->whereHas('project', fn ($query) => $query->where('is_active', true))
+            ->first();
+
+        if (! $translation || ! $translation->project) {
+            return $this->projectNotFound();
+        }
+
         return response()->json([
             'status' => true,
-            'data' => [
-                'id'            => $project->id,
-                'name'          => $translation->name,
-                'slug'          => $translation->slug,
-                'description'   => $translation->description,
-                'sections'      => [
-                    [
-                        'title'       => $translation->title_1,
-                        'description' => $translation->description_1,
-                    ],
-                    [
-                        'title'       => $translation->title_2,
-                        'description' => $translation->description_2,
-                    ],
-                    [
-                        'title'       => $translation->title_3,
-                        'description' => $translation->description_3,
-                    ],
-                    [
-                        'title'       => $translation->title_4,
-                        'description' => $translation->description_4,
-                    ],
-                ],
-                'images' => [
-                    'image'  => $project->image_url,  // فرض بر این است که accessor در مدل Project داری
-                    'image2' => $project->image2_url,
-                ],
-                'url'           => $project->url,
-                'is_active'     => $project->is_active,
-                'created_at'    => $project->created_at,
-                'updated_at'    => $project->updated_at,
-            ],
+            'data' => $this->formatProject($translation->project, $translation),
         ]);
+    }
+
+    /**
+     * GET /api/projects/nova-studio?lang=en
+     * GET /api/projects/34?lang=en
+     */
+    public function showDefault(Request $request, string $slug): JsonResponse
+    {
+        $validated = $request->validate([
+            'lang' => ['sometimes', 'required', 'string', 'in:fa,en,de,fr,es,ar'],
+        ]);
+
+        return $this->show($validated['lang'] ?? app()->getLocale(), $slug);
+    }
+
+    /**
+     * Flatten shared data and translated category content into the fields
+     * that pages/projectDetails.js reads directly.
+     */
+    private function formatProject(
+        Project $project,
+        ProjectTranslation $translation
+    ): array {
+        $shared = is_array($project->category_data) ? $project->category_data : [];
+        $localized = is_array($translation->category_content)
+            ? $translation->category_content
+            : [];
+
+        return [
+            'id' => $project->id,
+            'lang' => $translation->lang,
+            'name' => $translation->name,
+            'slug' => $translation->slug,
+            'category' => $this->normalizeCategory($project->category),
+            'description' => $translation->description,
+            'client' => $project->client,
+            'year' => $project->year,
+            'url' => $project->url,
+
+            'images' => [
+                'image' => $project->image_url,
+                'image2' => $project->image2_url,
+                'gallery' => $this->galleryUrls($project->gallery),
+            ],
+
+            // Website
+            'technologies' => $this->arrayValue($project->technologies),
+
+            // UI/UX
+            'prototype_url' => $shared['prototype_url'] ?? null,
+            'figma_url' => $shared['figma_url'] ?? null,
+            'design_tools' => $this->arrayValue($shared['design_tools'] ?? null),
+            'process' => $this->arrayValue($localized['process'] ?? null),
+
+            // Social Media
+            'campaign_url' => $shared['campaign_url'] ?? null,
+            'platforms' => $this->arrayValue($shared['platforms'] ?? null),
+
+            // Prompts
+            'purchase_url' => $shared['purchase_url'] ?? null,
+            'download_url' => $shared['download_url'] ?? null,
+            'compatible_tools' => $this->arrayValue($shared['compatible_tools'] ?? null),
+            'prompt_preview' => $localized['prompt_preview'] ?? null,
+
+            // Other
+            'features' => $this->arrayValue($localized['features'] ?? null),
+
+            // Available to all categories
+            'sections' => $this->arrayValue($translation->sections),
+            'is_active' => (bool) $project->is_active,
+            'is_marked' => (bool) $project->is_marked,
+            'created_at' => $project->created_at,
+            'updated_at' => $project->updated_at,
+        ];
+    }
+
+    /** Resolve gallery paths using the same disk as the model image accessors. */
+    private function galleryUrls(mixed $gallery): array
+    {
+        if (! is_array($gallery)) {
+            return [];
+        }
+
+        $urls = [];
+
+        foreach ($gallery as $path) {
+            if (! is_string($path) || trim($path) === '') {
+                continue;
+            }
+
+            $urls[] = url(Storage::disk('api_public')->url($path));
+        }
+
+        return array_values(array_unique($urls));
+    }
+
+    private function arrayValue(mixed $value): array
+    {
+        return is_array($value) ? array_values($value) : [];
+    }
+
+    /** Keep legacy category names compatible with the six frontend templates. */
+    private function normalizeCategory(?string $category): string
+    {
+        return match (strtolower(trim($category ?? ''))) {
+            'website', 'web' => 'website',
+            'ui-ux', 'ui/ux', 'ui.ux', 'uiux' => 'ui-ux',
+            'social-media', 'social media', 'socialmedia', 'social' => 'social-media',
+            'prompts', 'prompt' => 'prompts',
+            'graphic', 'graphic-design', 'graphic design', 'graphics' => 'graphic',
+            default => 'other',
+        };
+    }
+
+    private function projectNotFound(): JsonResponse
+    {
+        return response()->json([
+            'status' => false,
+            'message' => 'Project not found, inactive, or missing a translation for this language.',
+        ], 404);
     }
 }

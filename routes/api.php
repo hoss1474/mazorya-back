@@ -97,18 +97,54 @@ Route::middleware('auth:api')->group(function () {
 Route::post('/forgot-password', [ClientApiController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientApiController::class, 'resetPassword']);
 
-// روت‌های عمومی برای نمایش اطلاعات (بدون نیاز به لاگین)
-Route::get('/projects', [ProjectController::class, 'index']);
-// برای API
-Route::get('/{lang}/projects/{slug}', [ProjectController::class, 'show']);
+// Project List
+Route::get('/projects', [
+    ProjectController::class,
+    'index'
+]);
+
+// Project Detail By Language + Slug Or ID
+Route::get('/projects/{lang}/{slug}', [
+    ProjectController::class,
+    'show'
+]);
+
+// Project Detail By Default Language + Slug Or ID
+Route::get('/projects/{slug}', [
+    ProjectController::class,
+    'showDefault'
+]);
 
 
-Route::get('/blogs', [BlogController::class, 'index']);
-Route::get('/{lang}/blogs/{slug}', [BlogController::class, 'show']);
+// All blogs and limited latest blogs
+Route::get('/blogs', [
+    BlogController::class,
+    'index',
+]);
 
-Route::get('/Services', [ServicesController::class, 'index']);
-Route::get('/{lang}/Services/{slug}', [ServicesController::class, 'show']);
+// Blog detail by ID
+Route::get('/blogs/{id}', [
+    BlogController::class,
+    'showById',
+])->whereNumber('id');
 
+// Blog detail by language and slug
+Route::get('/blogs/{lang}/{slug}', [
+    BlogController::class,
+    'show',
+]);
+
+// List of active services
+Route::get('/Services', [
+    ServicesController::class,
+    'index',
+]);
+
+// Service detail by language and slug
+Route::get('/Services/{lang}/{slug}', [
+    ServicesController::class,
+    'show',
+]);
 /*
 |--------------------------------------------------------------------------
 | Rate Limited Routes (Public Submissions)

@@ -4,23 +4,58 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Service;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 
 class ServicesController extends Controller
 {
-    public function index(Request $request)
-    {
-        // دریافت زبان (پیش‌فرض سیستم اگر ست نشده بود)
-        $locale = $request->get('lang', App::getLocale());
+    /*
+    |--------------------------------------------------------------------------
+    | Supported Languages
+    |--------------------------------------------------------------------------
+    */
 
-        $services = Service::with(['translations' => function ($q) use ($locale) {
-            $q->where('locale', $locale);
-        }])
+    private const LANGUAGES = [
+        'fa', 'en', 'de', 'fr', 'es', 'ar',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET /api/Services
+    | GET /api/Services?lang=en
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'lang' => [
+                'sometimes',
+                'required',
+                'string',
+                'in:fa,en,de,fr,es,ar',
+            ],
+        ]);
+
+        $locale = $validated['lang'] ?? app()->getLocale();
+
+        $services = Service::query()
+            ->with([
+                'translations' => fn ($query) =>
+                $query->whereIn(
+                    'locale',
+                    array_unique([$locale, 'en'])
+                ),
+            ])
             ->where('is_active', true)
-            ->latest()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get()
-            ->map(fn ($service) => $this->formatService($service, $locale));
+            ->map(
+                fn (Service $service): array =>
+                $this->formatService($service, $locale)
+            )
+            ->values();
 
         return response()->json([
             'status' => true,
@@ -28,25 +63,42 @@ class ServicesController extends Controller
         ]);
     }
 
-    /**
-     * تغییر از ID به Lang و Slug برای سئو
-     */
-    public function show(Request $request, $lang, $slug)
-    {
-        $service = Service::whereHas('translations', function ($q) use ($lang, $slug) {
-            $q->where('slug', $slug)->where('locale', $lang);
-        })
-            ->with(['translations' => function ($q) use ($lang) {
-                $q->where('locale', $lang);
-            }])
+    /*
+    |--------------------------------------------------------------------------
+    | GET /api/Services/{lang}/{slug}
+    | GET /api/Services/en/website-design
+    |--------------------------------------------------------------------------
+    */
+
+    public function show(
+        string $lang,
+        string $slug
+    ): JsonResponse {
+        if (!in_array($lang, self::LANGUAGES, true)) {
+            return $this->serviceNotFound();
+        }
+
+        $service = Service::query()
             ->where('is_active', true)
+            ->whereHas('translations', function ($query) use (
+                $lang,
+                $slug
+            ) {
+                $query
+                    ->where('locale', $lang)
+                    ->where('slug', $slug);
+            })
+            ->with([
+                'translations' => fn ($query) =>
+                $query->whereIn(
+                    'locale',
+                    array_unique([$lang, 'en'])
+                ),
+            ])
             ->first();
 
         if (!$service) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Service not found for this language and slug',
-            ], 404);
+            return $this->serviceNotFound();
         }
 
         return response()->json([
@@ -55,46 +107,76 @@ class ServicesController extends Controller
         ]);
     }
 
-    /* ================= Formatter ================= */
-    protected function formatService(Service $service, $locale): array
-    {
-        // گرفتن اولین ترجمه (که به خاطر Eager Loading در متد بالا، همان زبان مورد نظر است)
-        $t = $service->translations->first();
+    /*
+    |--------------------------------------------------------------------------
+    | Format Service Response
+    |--------------------------------------------------------------------------
+    */
 
-        // Fallback: اگر ترجمه برای آن زبان نبود، انگلیسی را بگیرد
-        if (!$t) {
-            $t = $service->translations()->where('locale', 'en')->first();
+    protected function formatService(
+        Service $service,
+        string $locale
+    ): array {
+        // Requested language
+        $translation = $service->translations
+            ->firstWhere('locale', $locale);
+
+        // English fallback
+        if (!$translation) {
+            $translation = $service->translations
+                ->firstWhere('locale', 'en');
+        }
+
+        // Content sections (1 - 5)
+        $sections = [];
+
+        for ($index = 1; $index <= 5; $index++) {
+            $sections[] = [
+                'title' => $translation
+                    ?->getAttribute("title_{$index}"),
+
+                'description' => $translation
+                    ?->getAttribute("description_{$index}"),
+            ];
         }
 
         return [
             'id' => $service->id,
-            'slug' => $t->slug ?? null, // اضافه شده برای ساخت لینک در فرانت
-            'lang' => $t->locale ?? $locale,
-            'name' => $t->name ?? null,
-            'description' => $t->description ?? null,
 
-            'sections' => [
-                $this->section($t->title_1 ?? null, $t->description_1 ?? null),
-                $this->section($t->title_2 ?? null, $t->description_2 ?? null),
-                $this->section($t->title_3 ?? null, $t->description_3 ?? null),
-                $this->section($t->title_4 ?? null, $t->description_4 ?? null),
-            ],
+            'slug' => $translation?->slug,
+
+            'lang' => $translation?->locale ?? $locale,
+
+            'name' => $translation?->name,
+
+            'description' => $translation?->description,
+
+            'sections' => $sections,
 
             'images' => [
                 'image_1' => $service->image_url,
                 'image_2' => $service->image2_url,
             ],
 
-            'is_active' => (bool)$service->is_active,
-            'created_at' => $service->created_at->format('Y-m-d H:i:s'),
+            'is_active' => (bool) $service->is_active,
+
+            'created_at' => $service->created_at
+                ?->format('Y-m-d H:i:s'),
         ];
     }
 
-    protected function section($title, $description): array
+    /*
+    |--------------------------------------------------------------------------
+    | Service Not Found
+    |--------------------------------------------------------------------------
+    */
+
+    private function serviceNotFound(): JsonResponse
     {
-        return [
-            'title' => $title,
-            'description' => $description,
-        ];
+        return response()->json([
+            'status' => false,
+            'message' =>
+                'Service not found for this language and slug',
+        ], 404);
     }
 }
