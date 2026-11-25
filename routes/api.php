@@ -116,23 +116,27 @@ Route::get('/projects/{slug}', [
 ]);
 
 
-// All blogs and limited latest blogs
-Route::get('/blogs', [
-    BlogController::class,
-    'index',
-]);
+Route::prefix('blogs')->group(function () {
 
-// Blog detail by ID
-Route::get('/blogs/{id}', [
-    BlogController::class,
-    'showById',
-])->whereNumber('id');
+    // List blogs
+    Route::get('/', [
+        BlogController::class,
+        'index',
+    ]);
 
-// Blog detail by language and slug
-Route::get('/blogs/{lang}/{slug}', [
-    BlogController::class,
-    'show',
-]);
+    // Blog details by language and slug
+    Route::get('/{lang}/{slug}', [
+        BlogController::class,
+        'show',
+    ])->where('lang', 'fa|en|de|fr|es|ar');
+
+    // Blog details by ID
+    Route::get('/{id}', [
+        BlogController::class,
+        'showById',
+    ])->whereNumber('id');
+
+});
 
 // List of active services
 Route::get('/Services', [
