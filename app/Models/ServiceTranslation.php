@@ -3,56 +3,129 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class ServiceTranslation extends Model
 {
+    /*
+    |--------------------------------------------------------------------------
+    | Fillable
+    |--------------------------------------------------------------------------
+    */
+
     protected $fillable = [
         'service_id',
         'locale',
         'name',
-        'description',
-        'title_1',
-        'description_1',
-        'title_2',
-        'description_2',
-        'title_3',
-        'description_3',
-        'title_4',
-        'description_4',
         'slug',
+        'description',
+        'short_description',
+        'approach_description',
+        'deliverables',
+        'process',
+        'sections',
     ];
 
-    public function service()
+    /*
+    |--------------------------------------------------------------------------
+    | Casts
+    |--------------------------------------------------------------------------
+    */
+
+    protected $casts = [
+        'deliverables' => 'array',
+        'process' => 'array',
+        'sections' => 'array',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function service(): BelongsTo
     {
-        return $this->belongsTo(Service::class);
+        return $this->belongsTo(
+            Service::class,
+            'service_id'
+        );
     }
 
-    protected static function booted()
+    /*
+    |--------------------------------------------------------------------------
+    | Automatic Slug Generation
+    |--------------------------------------------------------------------------
+    */
+
+    protected static function booted(): void
     {
-        static::saving(function ($model) {
-            if ($model->isDirty('name') || empty($model->slug)) {
-                // ایجاد اسلاگ اولیه
-                $baseSlug = Str::slug($model->name, '-', null);
+        static::saving(function (self $translation): void {
 
-                // اگر نام فارسی باشد و Str::slug خالی برگرداند
-                if (empty($baseSlug)) {
-                    $baseSlug = str_replace(' ', '-', mb_strtolower($model->name));
-                }
-
-                $slug = $baseSlug;
-                $i = 1;
-
-                // اصلاح این بخش: تغییر lang به locale
-                while (self::where('slug', $slug)
-                    ->where('locale', $model->locale) // اینجا اصلاح شد
-                    ->where('id', '!=', $model->id)
-                    ->exists()) {
-                    $slug = $baseSlug . '-' . $i;
-                    $i++;
-                }
-                $model->slug = $slug;
+            // Preserve manually entered slugs.
+            if (filled($translation->slug)) {
+                return;
             }
+
+            // Generate slug from service name.
+            $baseSlug = self::slugify(
+                (string) $translation->name
+            );
+
+            if ($baseSlug === '') {
+                $baseSlug = 'service';
+            }
+
+            // Reserve space for numeric suffixes.
+            $baseSlug = Str::substr($baseSlug, 0, 180);
+
+            $slug = $baseSlug;
+            $counter = 2;
+
+            // Check uniqueness inside the same language.
+            while (
+            self::query()
+                ->where('locale', $translation->locale)
+                ->where('slug', $slug)
+                ->when(
+                    $translation->exists,
+                    fn ($query) => $query->where(
+                        'id',
+                        '!=',
+                        $translation->getKey()
+                    )
+                )
+                ->exists()
+            ) {
+                $slug = $baseSlug . '-' . $counter;
+                $counter++;
+            }
+
+            $translation->slug = $slug;
         });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Slug Normalization
+    |--------------------------------------------------------------------------
+    |
+    | Supports Unicode languages including Persian,
+    | Arabic, English, German, French and Spanish.
+    |
+    */
+
+    public static function slugify(string $value): string
+    {
+        $value = Str::lower(trim($value));
+
+        $slug = preg_replace(
+            '/[^\p{L}\p{M}\p{N}]+/u',
+            '-',
+            $value
+        );
+
+        return trim($slug ?? '', '-');
     }
 }

@@ -4,42 +4,32 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ServicesResource\Pages;
 use App\Models\Service;
-
 use BackedEnum;
-
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
-
 use Filament\Resources\Resource;
-
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
-
-use Filament\Tables\Table;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class ServicesResource extends Resource
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Resource Configuration
-    |--------------------------------------------------------------------------
-    */
-
     protected static ?string $model = Service::class;
 
-    protected static string|BackedEnum|null $navigationIcon =
-        'heroicon-o-rectangle-stack';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationLabel = 'سرویس‌ها';
 
@@ -47,287 +37,196 @@ class ServicesResource extends Resource
 
     protected static ?string $pluralModelLabel = 'سرویس‌ها';
 
-    /*
-    |--------------------------------------------------------------------------
-    | Form
-    |--------------------------------------------------------------------------
-    */
-
     public static function form(Schema $schema): Schema
     {
-        return $schema
-            ->components([
+        return $schema->components([
+            Section::make('تصاویر و وضعیت سرویس')
+                ->schema([
+                    static::serviceImageUpload('image', 'تصویر اصلی (لپ‌تاپ)')->required(),
+                    static::serviceImageUpload('image2', 'تصویر دوم (Our Approach)'),
+                    Toggle::make('is_active')
+                        ->label('فعال / غیرفعال')
+                        ->default(true)
+                        ->columnSpanFull(),
+                ])
+                ->columns(2)
+                ->columnSpanFull(),
 
-                /*
-                |--------------------------------------------------------------------------
-                | Main Information
-                |--------------------------------------------------------------------------
-                */
+            Section::make('محتوای چندزبانه')
+                ->description('برای هر زبان عنوان، اسلاگ و محتوای اختصاصی سرویس را ثبت کنید.')
+                ->schema([
+                    Repeater::make('translations')
+                        ->label('ترجمه‌های سرویس')
+                        ->relationship('translations')
+                        ->schema([
+                            Select::make('locale')
+                                ->label('زبان')
+                                ->options([
+                                    'fa' => 'فارسی',
+                                    'en' => 'English',
+                                    'de' => 'Deutsch',
+                                    'fr' => 'Français',
+                                    'es' => 'Español',
+                                    'ar' => 'العربية',
+                                ])
+                                ->required()
+                                ->native(false)
+                                ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                ->columnSpanFull(),
 
-                Section::make('اطلاعات اصلی')
-                    ->description(
-                        'مدیریت تصاویر و وضعیت نمایش سرویس'
-                    )
-                    ->schema([
+                            TextInput::make('name')
+                                ->label('عنوان سرویس (Hero)')
+                                ->required()
+                                ->maxLength(255)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (?string $state, Get $get, Set $set): void {
+                                    if (filled($get('slug'))) {
+                                        return;
+                                    }
 
-                        // Main Image
+                                    $slug = static::slugify($state ?? '');
+                                    if ($slug !== '') {
+                                        $set('slug', $slug);
+                                    }
+                                }),
 
-                        static::serviceImageUpload(
-                            'image',
-                            'تصویر اصلی سرویس'
-                        )
-                            ->required(),
+                            TextInput::make('slug')
+                                ->label('Slug')
+                                ->required()
+                                ->maxLength(255)
+                                ->helperText('آدرس اختصاصی این سرویس در زبان انتخاب‌شده.'),
 
-                        // Secondary Image
+                            Textarea::make('short_description')
+                                ->label('توضیح کوتاه Hero')
+                                ->rows(3)
+                                ->columnSpanFull(),
 
-                        static::serviceImageUpload(
-                            'image2',
-                            'تصویر دوم سرویس'
-                        ),
+                            Textarea::make('description')
+                                ->label('About the Service')
+                                ->rows(5)
+                                ->columnSpanFull(),
 
-                        // Active Status
+                            Repeater::make('deliverables')
+                                ->label('What We Deliver')
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->label('عنوان کارت')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Textarea::make('description')
+                                        ->label('توضیح کارت')
+                                        ->rows(3),
+                                ])
+                                ->columns(2)
+                                ->defaultItems(0)
+                                ->collapsible()
+                                ->addActionLabel('افزودن کارت')
+                                ->columnSpanFull(),
 
-                        Toggle::make('is_active')
-                            ->label('فعال / غیرفعال')
-                            ->default(true)
-                            ->columnSpanFull(),
+                            Repeater::make('process')
+                                ->label('مراحل اجرای سرویس')
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->label('عنوان مرحله')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Textarea::make('description')
+                                        ->label('شرح مرحله')
+                                        ->rows(3),
+                                ])
+                                ->columns(2)
+                                ->defaultItems(0)
+                                ->collapsible()
+                                ->addActionLabel('افزودن مرحله')
+                                ->columnSpanFull(),
 
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
+                            Textarea::make('approach_description')
+                                ->label('Our Approach')
+                                ->rows(5)
+                                ->columnSpanFull(),
 
-                /*
-                |--------------------------------------------------------------------------
-                | Service Translations
-                |--------------------------------------------------------------------------
-                */
-
-                Section::make('ترجمه‌ها')
-                    ->description(
-                        'برای هر زبان اطلاعات سرویس را جداگانه ثبت کنید.'
-                    )
-                    ->schema([
-
-                        Repeater::make('translations')
-                            ->label('ترجمه‌های سرویس')
-                            ->relationship('translations')
-
-                            ->schema([
-
-                                // Language
-
-                                Select::make('locale')
-                                    ->label('زبان')
-                                    ->options([
-                                        'fa' => 'فارسی',
-                                        'en' => 'English',
-                                        'de' => 'Deutsch',
-                                        'fr' => 'Français',
-                                        'es' => 'Español',
-                                        'ar' => 'العربية',
-                                    ])
-                                    ->required()
-                                    ->native(false)
-                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                    ->columnSpanFull(),
-
-                                // Service Name
-
-                                TextInput::make('name')
-                                    ->label('عنوان سرویس')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->live(onBlur: true)
-                                    ->columnSpanFull(),
-
-                                // Main Description
-
-                                RichEditor::make('description')
-                                    ->label('توضیحات سرویس')
-                                    ->columnSpanFull(),
-
-                                /*
-                                |--------------------------------------------------------------------------
-                                | Content Blocks 1 - 5
-                                |--------------------------------------------------------------------------
-                                */
-
-                                ...static::contentBlocks(),
-
-                            ])
-
-                            ->columns(2)
-                            ->minItems(1)
-                            ->collapsible()
-                            ->addActionLabel('افزودن ترجمه')
-
-                            ->itemLabel(
-                                fn (array $state): string =>
-                                    strtoupper(
-                                        $state['locale'] ?? '--'
-                                    )
-                                    . ' | '
-                                    . (
-                                    filled($state['name'] ?? null)
-                                        ? $state['name']
-                                        : 'سرویس بدون عنوان'
-                                    )
-                            ),
-
-                    ])
-                    ->columnSpanFull(),
-
-            ]);
+                            Repeater::make('sections')
+                                ->label('توضیحات تکمیلی')
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->label('عنوان بخش')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Textarea::make('description')
+                                        ->label('توضیحات بخش')
+                                        ->rows(4),
+                                ])
+                                ->columns(2)
+                                ->defaultItems(0)
+                                ->collapsible()
+                                ->addActionLabel('افزودن بخش')
+                                ->columnSpanFull(),
+                        ])
+                        ->columns(2)
+                        ->minItems(1)
+                        ->collapsible()
+                        ->addActionLabel('افزودن ترجمه')
+                        ->itemLabel(fn (array $state): string =>
+                            strtoupper($state['locale'] ?? '--') . ' | ' . ($state['name'] ?? 'بدون عنوان'))
+                        ->columnSpanFull(),
+                ])
+                ->columnSpanFull(),
+        ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Image Upload Configuration
-    |--------------------------------------------------------------------------
-    */
+    private static function slugify(string $value): string
+    {
+        $value = Str::lower(trim($value));
+        $slug = preg_replace('/[^\p{L}\p{M}\p{N}]+/u', '-', $value);
 
-    private static function serviceImageUpload(
-        string $field,
-        string $label
-    ): FileUpload {
+        return Str::substr(trim($slug ?? '', '-'), 0, 200);
+    }
+
+    private static function serviceImageUpload(string $field, string $label): FileUpload
+    {
         return FileUpload::make($field)
             ->label($label)
             ->image()
             ->disk('api_public')
             ->directory('service')
             ->visibility('public')
-            ->acceptedFileTypes([
-                'image/jpeg',
-                'image/png',
-                'image/webp',
-            ])
+            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->imagePreviewHeight('200')
             ->panelLayout('integrated');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Content Blocks
-    |--------------------------------------------------------------------------
-    |
-    | Generate title_1 through title_5
-    | Generate description_1 through description_5
-    |
-    */
-
-    private static function contentBlocks(): array
-    {
-        $components = [];
-
-        for ($index = 1; $index <= 5; $index++) {
-
-            $components[] = TextInput::make(
-                "title_{$index}"
-            )
-                ->label("عنوان {$index}")
-                ->maxLength(255);
-
-            $components[] = RichEditor::make(
-                "description_{$index}"
-            )
-                ->label("توضیح {$index}");
-
-        }
-
-        return $components;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Table
-    |--------------------------------------------------------------------------
-    */
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-
-                // Service ID
-
-                TextColumn::make('id')
-                    ->label('شماره سرویس')
-                    ->searchable()
-                    ->sortable(),
-
-                // Persian Service Name
-
+                TextColumn::make('id')->label('شناسه')->sortable(),
                 TextColumn::make('faTranslation.name')
-                    ->label('نام سرویس')
+                    ->label('عنوان سرویس')
                     ->searchable()
                     ->sortable()
                     ->placeholder('ترجمه فارسی ندارد'),
-
-                // Active Status
-
-                IconColumn::make('is_active')
-                    ->label('وضعیت')
-                    ->boolean()
-                    ->sortable(),
-
+                IconColumn::make('is_active')->label('وضعیت')->boolean()->sortable(),
             ])
-
             ->defaultSort('id', 'desc')
-
-            /*
-            |--------------------------------------------------------------------------
-            | Record Actions
-            |--------------------------------------------------------------------------
-            */
-
             ->recordActions([
-
-                EditAction::make()
-                    ->label('ویرایش')
-                    ->icon('heroicon-o-pencil-square'),
-
-                DeleteAction::make()
-                    ->label('حذف')
-                    ->icon('heroicon-o-trash')
-                    ->requiresConfirmation(),
-
+                EditAction::make()->label('ویرایش'),
+                DeleteAction::make()->label('حذف')->requiresConfirmation(),
             ])
-
-            /*
-            |--------------------------------------------------------------------------
-            | Bulk Actions
-            |--------------------------------------------------------------------------
-            */
-
             ->toolbarActions([
-
                 BulkActionGroup::make([
-
                     DeleteBulkAction::make()
                         ->label('حذف سرویس‌های انتخاب‌شده')
                         ->requiresConfirmation(),
-
                 ]),
-
             ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Resource Pages
-    |--------------------------------------------------------------------------
-    */
 
     public static function getPages(): array
     {
         return [
-
             'index' => Pages\ListServices::route('/'),
-
             'create' => Pages\CreateServices::route('/create'),
-
             'edit' => Pages\EditServices::route('/{record}/edit'),
-
         ];
     }
 }
